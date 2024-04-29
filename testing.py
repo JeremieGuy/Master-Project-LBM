@@ -1,6 +1,9 @@
 import numpy as np
+import sys
 import matplotlib.pyplot as plt
 
+nx = 300
+ny = 100
 
 def testMeshGrid():
     nx = np.linspace(-5,5,20)
@@ -52,9 +55,34 @@ def testSum():
     print(sum(x*b,2))
 
 def testLinesapce():
+    # x = np.arange(0,100,1)
+    # print(x[1:49])
+    # print(len(x[1:49]))
     x = np.arange(0,100,1)
-    print(x[1:49])
-    print(len(x[1:49]))
+    print(x)
+    print(len(x))
+
+def testVel(nx,ny):
+    np.set_printoptions(threshold=sys.maxsize)
+    lattice = np.zeros((2,nx,ny))
+    lattice[0,0,:] = 0.1
+    print(np.size(lattice))
+    print(lattice[0,:,:])
+    plt.imshow(np.transpose(lattice[0,:,:]))
+    plt.show()
+
+def testUmax():
+    distance = abs(np.arange(-ny//2,ny//2,1))
+    print(distance)
+    print(len(distance))
+    umax = 0.04
+    expectedU = [umax*(1-(i/ny)**2) for i in distance]
+    plt.plot(np.arange(0,ny,1),expectedU)
+    plt.show()
+
+def testcoord(x):
+    distance = abs(np.arange(-ny//2,ny//2,1))
+    print(distance[int(x)])
 
 # testMatrix()
 # testMeshGrid()
@@ -63,4 +91,7 @@ def testLinesapce():
 # testRange()
 # rolling()
 # testSum()
-testLinesapce()
+# testLinesapce()
+# testVel(30,10)
+# testUmax()
+testcoord("20:30")
