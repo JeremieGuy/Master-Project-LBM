@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 
 ###### Flow definition #########################################################
-maxIter = 10000  # Total number of time iterations.
+maxIter = 20000  # Total number of time iterations.
 Re = 10.0         # Reynolds number.
 nx, ny = 300, 100 # Number of lattice nodes.
 ly = ny-1         # Height of the domain in lattice units.
@@ -80,21 +80,29 @@ populationLeft = [] # rho*u at x = 50
 populationCenter = [] # rho*u at x = 150
 populationRight = [] # rho*u at x = 250
 
+bilan = []
+
 ###### Main time loop ##########################################################
 for time in range(maxIter):
+
+    if time<=(maxIter//2):
     # Right wall: outflow condition.
-    fin[col3,-1,:] = fin[col3,-2,:] 
+        fin[col3,-1,:] = fin[col3,-2,:] 
 
     # Compute macroscopic variables, density and velocity.
     rho, u = macroscopic(fin)
 
+    if time<=(maxIter//2):
     # Left wall: inflow condition.
-    u[:,0,1:ny-2] = vel[:,0,1:ny-2]
-    rho[0,1:ny-2] = 1/(1-u[0,0,1:ny-2]) * ( sum(fin[col2,0,1:ny-2], axis=0) +
-                                  2*sum(fin[col3,0,1:ny-2], axis=0) )
+        u[:,0,1:ny-2] = vel[:,0,1:ny-2]
+        rho[0,1:ny-2] = 1/(1-u[0,0,1:ny-2]) * ( sum(fin[col2,0,1:ny-2], axis=0) +
+                                    2*sum(fin[col3,0,1:ny-2], axis=0) )
     # Compute equilibrium.
     feq = equilibrium(rho, u)
     fin[[0,1,2],0,:] = feq[[0,1,2],0,:] + fin[[8,7,6],0,:] - feq[[8,7,6],0,:]
+
+    # bilan entrée-sortie
+    bilan.append(sum(fin[:,0,:]-fin[:,nx-1,:]))
 
     # Collision step.
     fout = fin - omega * (fin - feq)
@@ -136,52 +144,72 @@ for time in range(maxIter):
 
 ux = u[0,nx//2,:]
 
+deltaRho = abs(mean(rho[0,:]) - mean(rho[nx-1,:]))
+
 R = ny//2
 umax = u[0,nx//2,R]
 r = abs(arange(-ny//2,ny//2,1))
-expectedU = [umax*(1-(i/ny)**2) for i in r]
+expectedU = [umax*(1-(i/R)**2) for i in r]
+uformula = [deltaRho*(R**2-i**2)/(4*nulb*nx) for i in r]
 
-mse = ((ux - expectedU)**2).mean()
+mse_expectedU = mean(((ux - expectedU)**2))
+mse_physicU = mean((ux - uformula)**2)
+
+# plt.close()
+# fig, (ax1, ax2) = plt.subplots(1, 2)
+# fig.suptitle("MSE : " + str(mse))
+# ax1.plot(arange(0,ny,1),ux)
+# ax1.set_title("Velocity profile at x=150")
+
+# ax2.plot(arange(0,ny,1),expectedU)
+# ax2.set_title("expected velocity profile")
 
 plt.close()
-fig, (ax1, ax2) = plt.subplots(1, 2)
-fig.suptitle("MSE : " + str(mse))
-ax1.plot(arange(0,ny,1),ux)
-ax1.set_title("Velocity profile at x=150")
-
-ax2.plot(arange(0,ny,1),expectedU)
-ax2.set_title("expected velocity profile")
-
+plt.plot(arange(0,ny,1),ux, label="velocity profile at x=150")
+plt.plot(arange(0,ny,1),expectedU, label = "expected velocity profile")
+plt.plot(arange(0,ny,1),uformula,label="expected u with phyisc units",)
+plt.title("MSE expectedU = " + str(mse_expectedU) + ", MSE physic U = " + str(mse_physicU))
+plt.legend()
 plt.show()
 
 # POPULATION
 
 # total population
+plt.figure()
 plt.plot(arange(0,len(latticePopulation),1),latticePopulation)
+plt.axvline(x=maxIter//2, color ="r", linestyle = 'dashed')
 plt.title("Sum of total population of the lattice")
 plt.show()
 
 # population accross lattice
-fig,(popl,popc,popr) = plt.subplots(1,3)
-fig.suptitle("rho*u accross lattice")
+# fig,(popl,popc,popr) = plt.subplots(1,3)
+# fig.suptitle("rho*u accross lattice")
 
-popl.plot(arange(0,len(populationLeft),1),populationLeft)
-popl.set_title("x = 50")
+# popl.plot(arange(0,len(populationLeft),1),populationLeft)
+# popl.set_title("x = 50")
 
-popc.plot(arange(0,len(populationCenter),1),populationCenter)
-popc.set_title("x = 150")
+# popc.plot(arange(0,len(populationCenter),1),populationCenter)
+# popc.set_title("x = 150")
 
-popr.plot(arange(0,len(populationRight),1),populationCenter)
-popr.set_title("x = 250")
+# popr.plot(arange(0,len(populationRight),1),populationCenter)
+# popr.set_title("x = 250")
 
+plt.figure()
+plt.plot(arange(0,len(populationLeft),1),populationLeft, label="x = 50")
+plt.plot(arange(0,len(populationCenter),1),populationCenter, label="x = 150")
+plt.plot(arange(0,len(populationRight),1),populationRight, label = "x = 250")
+plt.axvline(x=maxIter//2, color ="r", linestyle = 'dashed')
+plt.title("rho*u accross lattice")
+plt.legend(title = "x coordinates")
+plt.show()
+
+plt.figure()
+plt.plot(arange(0,len(bilan),1),bilan)
+plt.axvline(x=maxIter//2, color ="r", linestyle = 'dashed')
+plt.title("Bilan entrées - sorties")
 plt.show()
 
 
-
 ####################### COMMENTS & QUESTIONS #################################
-
-# inflow : defined on y coordinates 1:ny-2 because bounceback on top & bottom => has an impact ?
-
-# population increasing ?
 
 # how to pass coordinates range as function parameters ? ex : f(x):print(array[x]) with x = 10:40 ?
