@@ -8,17 +8,19 @@
 from numpy import *
 import matplotlib.pyplot as plt
 from matplotlib import cm
+import os
 
 ###### Flow definition #########################################################
-maxIter = 20000  # Total number of time iterations.
+maxIter = 30000  # Total number of time iterations.
 Re = 10.0         # Reynolds number.
-nx, ny = 300, 100 # Number of lattice nodes.
+nx, ny = 301, 201 # Number of lattice nodes.
 ly = ny-1         # Height of the domain in lattice units.
 cx, cy, r = nx//4, ny//2, ny//9 # Coordinates of the cylinder.
 uLB     = 0.04                  # Velocity in lattice units.
 nulb    = uLB*r/Re;             # Viscoscity in lattice units.
 omega = 1 / (3*nulb+0.5);    # Relaxation parameter.
 velocity = 0.04             #inital velocity
+cs = 1/3                # sound celerity adapted to lattice units     
 
 ###### Lattice Constants #######################################################
 v = array([ [ 1,  1], [ 1,  0], [ 1, -1], [ 0,  1], [ 0,  0],
@@ -74,13 +76,29 @@ fin = equilibrium(1, vel)
 
 ##################### DEFINING CONTROL VARIABLES #####################
 
+systemCheck = True
+velocityEvolution = True
+StopInOut = True
+visualize = False
+
 latticePopulation = []
 
-populationLeft = [] # rho*u at x = 50
-populationCenter = [] # rho*u at x = 150
-populationRight = [] # rho*u at x = 250
+rho_u_left = [] # rho*u at x = 50
+rho_u_center = [] # rho*u at x = 150
+rho_u_right = [] # rho*u at x = 250
 
-bilan = []
+bilanIn = []
+bilanOut = []
+
+velocityEvo = []
+plots = 100
+plotTime = []
+
+if velocityEvolution:
+    new_dir = "VelocityProfile_" + str(maxIter) + "_it"
+    if not os.path.exists("./"+new_dir):
+        os.mkdir(new_dir)
+        print("Made new directory : " + new_dir)
 
 ###### Main time loop ##########################################################
 for time in range(maxIter):
@@ -92,17 +110,24 @@ for time in range(maxIter):
     # Compute macroscopic variables, density and velocity.
     rho, u = macroscopic(fin)
 
-    if time<=(maxIter//2):
-    # Left wall: inflow condition.
+    if StopInOut:
+        if time<=(maxIter//2):
+        # Left wall: inflow condition.
+            u[:,0,1:ny-2] = vel[:,0,1:ny-2]
+            rho[0,1:ny-2] = 1/(1-u[0,0,1:ny-2]) * ( sum(fin[col2,0,1:ny-2], axis=0) +
+                                        2*sum(fin[col3,0,1:ny-2], axis=0) )
+    else : 
         u[:,0,1:ny-2] = vel[:,0,1:ny-2]
         rho[0,1:ny-2] = 1/(1-u[0,0,1:ny-2]) * ( sum(fin[col2,0,1:ny-2], axis=0) +
                                     2*sum(fin[col3,0,1:ny-2], axis=0) )
+        
     # Compute equilibrium.
     feq = equilibrium(rho, u)
     fin[[0,1,2],0,:] = feq[[0,1,2],0,:] + fin[[8,7,6],0,:] - feq[[8,7,6],0,:]
 
     # bilan entrée-sortie
-    bilan.append(sum(fin[:,0,:]-fin[:,nx-1,:]))
+    bilanIn.append(sum(fin[:,0,:]))
+    bilanOut.append(sum(fin[:,nx-1,:]))
 
     # Collision step.
     fout = fin - omega * (fin - feq)
@@ -121,93 +146,133 @@ for time in range(maxIter):
                             v[i,1], axis=1 )
  
     # Visualization of the velocity.
-    if (time%10==0):
+    if (time%10==0) and visualize:
         plt.clf()
         plt.imshow(sqrt(u[0]**2+u[1]**2).transpose(), cmap=cm.Reds)
         plt.title("iteration : %d/%d" % (time, maxIter))
         # plt.savefig("vel.{0:03d}.png".format(time//100))
         plt.pause(.01)
         plt.cla()
+    else : 
+        print("iteration : " + str(time) + "/" + str(maxIter), end="\r")
     
     # population control : 
     latticePopulation.append(sum(fin))
 
-    populationLeft.append(sum(fin[:,50,:]*u[0,50,:]))
-    populationCenter.append(sum(fin[:,150,:]*u[0,150,:]))
-    populationRight.append(sum(fin[:,250,:]*u[0,250,:]))
+    rho_u_left.append(sum(fin[:,50,:]*u[0,50,:]))
+    rho_u_center.append(sum(fin[:,150,:]*u[0,150,:]))
+    rho_u_right.append(sum(fin[:,250,:]*u[0,250,:]))
+
+    if(time%plots==0):
+        velocityEvo.append(u[0,nx//2,:])
+        plotTime.append(time)
 
 
 #################### SYSTEM CHECKING ###################### 
 # VELOCITY
+if velocityEvolution:
+    x = arange(0,len(velocityEvo[0]),1)
+    plotnb = arange(0,len(velocityEvo),1)
+    for u_evo,i in zip(velocityEvo,plotnb):
+        print("making graphs ...", end='\r')
+        plt.clf()
+        plt.plot(x,u_evo)
+        plt.axis([-10,len(x)+10,-0.005,0.05])
+        plt.title("Velocity profile Evolution at " + str(plots*(i+1)) + " it")
+        plt.xlabel("Lattice width coordinates")
+        plt.ylabel("Velocity")
+        plt.savefig("./" + new_dir + "/profile_" + str(i) + ".png")
+    
+    print("Velocity graphs done.")
 
-# velocity profile after system stabilisation at coordinates x = nx/2
+if systemCheck :
+    savefiles = True
 
-ux = u[0,nx//2,:]
+    # velocity profile after system stabilisation at coordinates x = nx/2
 
-deltaRho = abs(mean(rho[0,:]) - mean(rho[nx-1,:]))
+    # final colucity at the center
+    ux = u[0,nx//2,:]
 
-R = ny//2
-umax = u[0,nx//2,R]
-r = abs(arange(-ny//2,ny//2,1))
-expectedU = [umax*(1-(i/R)**2) for i in r]
-uformula = [deltaRho*(R**2-i**2)/(4*nulb*nx) for i in r]
+    # theorical variables lattice dependant
+    deltaRho = abs(mean(rho[0,:]) - mean(rho[nx-1,:]))
+    deltaP = deltaRho/cs**2
+    print("Rho left : ", mean(rho[0,:]))
+    print("Rho right : ", mean(rho[nx-1,:]))
 
-mse_expectedU = mean(((ux - expectedU)**2))
-mse_physicU = mean((ux - uformula)**2)
+    R = ny//2
+    umax = u[0,nx//2,R]
+    r = abs(arange(-ny//2,ny//2,1))
 
-# plt.close()
-# fig, (ax1, ax2) = plt.subplots(1, 2)
-# fig.suptitle("MSE : " + str(mse))
-# ax1.plot(arange(0,ny,1),ux)
-# ax1.set_title("Velocity profile at x=150")
+    # expected and theorical velocities
+    expectedU = [umax*(1-(i/R)**2) for i in r]
+    uformula = [deltaP*(R**2-i**2)/(4*nulb*nx) for i in r]
 
-# ax2.plot(arange(0,ny,1),expectedU)
-# ax2.set_title("expected velocity profile")
+    mse_expectedU = mean(((ux - expectedU)**2))
+    mse_physicU = mean((ux - uformula)**2)
 
-plt.close()
-plt.plot(arange(0,ny,1),ux, label="velocity profile at x=150")
-plt.plot(arange(0,ny,1),expectedU, label = "expected velocity profile")
-plt.plot(arange(0,ny,1),uformula,label="expected u with phyisc units",)
-plt.title("MSE expectedU = " + str(mse_expectedU) + ", MSE physic U = " + str(mse_physicU))
-plt.legend()
-plt.show()
+    # VELOCITY PROFILES
 
-# POPULATION
+    plt.close()
+    plt.plot(arange(0,ny,1), ux, label="Real profile at x=150")
+    plt.plot(arange(0,ny,1), expectedU, label = "Expected profile")
+    plt.plot(arange(0,ny,1), uformula,label="Theoretical profile",)
+    plt.title("Velocity profiles")
+    plt.xlabel("Lattice width coordinates")
+    plt.ylabel("Velocity")
+    plt.legend()
+    name = "./Monitoring/" + "Velocity_Profiles_" + str(maxIter)
+    if StopInOut: name += "_stopInOutAtHalf"
+    if savefiles: plt.savefig(name, bbox_inches='tight')
+    plt.show()
 
-# total population
-plt.figure()
-plt.plot(arange(0,len(latticePopulation),1),latticePopulation)
-plt.axvline(x=maxIter//2, color ="r", linestyle = 'dashed')
-plt.title("Sum of total population of the lattice")
-plt.show()
+    # POPULATION
 
-# population accross lattice
-# fig,(popl,popc,popr) = plt.subplots(1,3)
-# fig.suptitle("rho*u accross lattice")
+    # total population
+    plt.figure()
+    plt.plot(arange(0,len(latticePopulation),1),latticePopulation)
+    plt.title("Total population over the lattice")
+    plt.xlabel("Iterations")
+    plt.ylabel("Population")
+    name = "./Monitoring/" + "pop_sum_" + str(maxIter)
+    if StopInOut: 
+        name += "_stopInOutAtHalf"
+        plt.axvline(x=maxIter//2, color ="r", linestyle = 'dashed')
+    if savefiles: plt.savefig(name, bbox_inches='tight')
+    plt.show()
 
-# popl.plot(arange(0,len(populationLeft),1),populationLeft)
-# popl.set_title("x = 50")
 
-# popc.plot(arange(0,len(populationCenter),1),populationCenter)
-# popc.set_title("x = 150")
+    # FLOW RATE
 
-# popr.plot(arange(0,len(populationRight),1),populationCenter)
-# popr.set_title("x = 250")
+    plt.figure()
+    plt.plot(arange(0,len(rho_u_left),1),rho_u_left, label="x = 50")
+    plt.plot(arange(0,len(rho_u_center),1),rho_u_center, label="x = 150")
+    plt.plot(arange(0,len(rho_u_right),1),rho_u_right, label = "x = 250")
+    plt.title("Flow rate (Rho*u) accross lattice")
+    plt.xlabel("Iterations")
+    plt.ylabel("Flow rate")
+    plt.legend(title = "x coordinates")
+    name = "./Monitoring/" + "rho_u_" + str(maxIter)
+    if StopInOut: 
+        name += "_stopInOutAtHalf"
+        plt.axvline(x=maxIter//2, color ="r", linestyle = 'dashed')
+    if savefiles: plt.savefig(name, bbox_inches='tight')
+    plt.show()
 
-plt.figure()
-plt.plot(arange(0,len(populationLeft),1),populationLeft, label="x = 50")
-plt.plot(arange(0,len(populationCenter),1),populationCenter, label="x = 150")
-plt.plot(arange(0,len(populationRight),1),populationRight, label = "x = 250")
-plt.axvline(x=maxIter//2, color ="r", linestyle = 'dashed')
-plt.title("rho*u accross lattice")
-plt.legend(title = "x coordinates")
-plt.show()
+    # INPUT & OUTPUT
 
-plt.figure()
-plt.plot(arange(0,len(bilan),1),bilan)
-plt.axvline(x=maxIter//2, color ="r", linestyle = 'dashed')
-plt.title("Bilan entrées - sorties")
-plt.show()
+    plt.figure()
+    plt.plot(arange(0,len(bilanIn),1),bilanIn, label="Input")
+    plt.plot(arange(0,len(bilanOut),1),bilanOut, label="Output")
+    plt.title("Input & Ouput assessment")
+    plt.xlabel("Iterations")
+    plt.ylabel("Population")
+    plt.legend()
+    name = "./Monitoring/" + "in_out_" + str(maxIter)
+    if StopInOut: 
+        name += "_stopInOutAtHalf"
+        plt.axvline(x=maxIter//2, color ="r", linestyle = 'dashed')
+    if savefiles: plt.savefig(name, bbox_inches='tight')
+    plt.show()
 
 
 ####################### COMMENTS & QUESTIONS #################################
