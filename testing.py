@@ -2,8 +2,8 @@ import numpy as np
 import sys
 import matplotlib.pyplot as plt
 
-nx = 300
-ny = 100
+nx = 301
+ny = 201
 
 def testMeshGrid():
     nx = np.linspace(-5,5,20)
@@ -58,7 +58,7 @@ def testLinesapce():
     # x = np.arange(0,100,1)
     # print(x[1:49])
     # print(len(x[1:49]))
-    x = np.arange(0,100,1)
+    x = abs(np.arange((-ny//2)+1,(ny//2)+1,1))
     print(x)
     print(len(x))
 
@@ -84,6 +84,62 @@ def testcoord(x):
     distance = abs(np.arange(-ny//2,ny//2,1))
     print(distance[int(x)])
 
+
+def testflag():
+    f = np.zeros((9,10,10))
+    flags = np.zeros((10,10))
+
+    for x in range(10):
+        for y in range(10):
+            for i in range(9):
+                if x == y :
+                    flags[x,y] = 1
+                    f[i,x,y] = 0
+    
+    print(flags)
+    print(f)
+
+def testflagobstacle():
+    # 0 = open, 1 = bounceback, 2 = obstacle
+
+    # open path = 0
+    flags = np.zeros((nx,ny))
+
+    # bounceback = 1
+    flags[:,0] = 1 # top
+    flags[:,ny-1] = 1 # bot
+    flags[nx-1,:] = 1 # right
+
+    # obstacle1 = (80:120, 210:250)
+    # bounceback around obstalce
+    flags[0:151,50] = 1
+    flags[0:151,150] = 1
+    flags[0,50:151] = 1
+    flags[150,50:151] = 1
+
+    # inside obstacle = 2 = no update
+    flags[1:150,51:150] = 2
+
+    # obstacle 2 = (200:250,50:150)
+    # bounceback around obstalce
+    flags[200:251,50] = 1
+    flags[200:251,150] = 1
+    flags[200,50:151] = 1
+    flags[250,50:151] = 1
+
+    # inside obstacle = 2 = no update
+    flags[201:250,51:150] = 2
+
+
+    plt.imshow(flags)
+    plt.show()
+
+def test1():
+
+    x = np.arange(0,10,1)
+    print(x)
+    print(x[3:7])
+
 # testMatrix()
 # testMeshGrid()
 # testFull()
@@ -94,4 +150,7 @@ def testcoord(x):
 # testLinesapce()
 # testVel(30,10)
 # testUmax()
-testcoord("20:30")
+# testcoord("20:30")
+# testflag()
+testflagobstacle()
+# test1()

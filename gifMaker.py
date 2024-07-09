@@ -1,9 +1,9 @@
 import imageio
 
 
-directory = "Flow_50000_it"
-maxIter = 50000
-plots = 20
+directory = "Flow_no_roll_flags_obstacle_6000_it"
+maxIter = 6000
+plots = 50
 
 frames = []
 t = maxIter//plots

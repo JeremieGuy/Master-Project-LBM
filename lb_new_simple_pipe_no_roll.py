@@ -11,13 +11,14 @@ from matplotlib import cm
 import os
 
 ###### Flow definition #########################################################
-maxIter = 15000  # Total number of time iterations.
+maxIter = 30  # Total number of time iterations.
 Re = 10.0         # Reynolds number.
 nx, ny = 301, 201 # Number of lattice nodes.
 ly = ny-1         # Height of the domain in lattice units.
-cx, cy, r = nx//4, ny//2, ny//9 # Coordinates of the cylinder.
+# cx, cy, r = nx//4, ny//2, ny//2 # Coordinates of the cylinder.
+rayon = ny//2           # rayon of tube section
 uLB     = 0.04                  # Velocity in lattice units.
-nulb    = uLB*r/Re;             # Viscoscity in lattice units.
+nulb    = uLB*rayon/Re;             # Viscoscity in lattice units.
 omega = 1 / (3*nulb+0.5);    # Relaxation parameter.
 velocity = 0.04             #inital velocity
 cs2 = 1/3                # sound veocity adapted to lattice units     
@@ -30,6 +31,12 @@ t = array([ 1/36, 1/9, 1/36, 1/9, 4/9, 1/9, 1/36, 1/9, 1/36])
 col1 = array([0, 1, 2])
 col2 = array([3, 4, 5])
 col3 = array([6, 7, 8])
+
+####### FLAGS #######################################################
+
+# 0 = open, 1 = border/bounceback, 2 = obstacle
+flags = [0,1,2]
+
 
 ###### Function Definitions ####################################################
 def macroscopic(fin):
@@ -77,9 +84,11 @@ fin = equilibrium(1, vel)
 ##################### DEFINING CONTROL VARIABLES #####################
 
 systemCheck = True
+savefiles = True
 velocityEvolution = False
 StopInOut = True
-visualize = False
+visualize = True
+saveVisual = True
 
 latticePopulation = []
 
@@ -94,11 +103,23 @@ velocityEvo = []
 plots = 100
 plotTime = []
 
+if savefiles : 
+    new_dir_monitoring = "./Monitoring_tube_no_roll_" + str(maxIter) + "_it"
+    if not os.path.exists(new_dir_monitoring):
+        os.mkdir(new_dir_monitoring)
+        print("Made new monitoring directory : " + new_dir_monitoring)
+
 if velocityEvolution:
-    new_dir = "VelocityProfile_" + str(maxIter) + "_it"
-    if not os.path.exists("./"+new_dir):
-        os.mkdir(new_dir)
-        print("Made new directory : " + new_dir)
+    new_dir_velocity = "./VelocityProfile_" + str(maxIter) + "_it"
+    if not os.path.exists(new_dir_velocity):
+        os.mkdir(new_dir_velocity)
+        print("Made new velocitiy evolution directory : " + new_dir_velocity)
+
+if saveVisual :
+    new_dir_visual = "./Flow_no_roll_" + str(maxIter) + "_it"
+    if not os.path.exists(new_dir_visual):
+        os.mkdir(new_dir_visual)
+        print("Made new flow directory : " + new_dir_visual)
 
 ###### Main time loop ##########################################################
 for time in range(maxIter):
@@ -143,10 +164,24 @@ for time in range(maxIter):
         fout[i,:,ny-1] = fin[8-i,:,ny-1]
 
     # Streaming step.
-    for i in range(9):
-        fin[i,:,:] = roll(
-                            roll(fout[i,:,:], v[i,0], axis=0),
-                            v[i,1], axis=1 )
+    for x in range(nx):
+        for y in range(ny):
+            for i in range(9):
+                next_x = x + v[i,0]
+                next_y = y + v[i,1]
+
+                if next_x < 0:
+                    next_x = nx-1
+                if next_x >= nx:
+                    next_x = 0
+                
+                if next_y < 0:
+                    next_y = ny-1
+                if next_y >= ny:
+                    next_y = 0
+                
+                fin[i,next_x,next_y] = fout[i,x,y]
+  
  
     # Visualization of the velocity.
     if (time%10==0) and visualize:
@@ -167,8 +202,13 @@ for time in range(maxIter):
     rho_u_right.append(sum(fin[:,250,:]*u[0,250,:]))
 
     if(time%plots==0):
-        velocityEvo.append(u[0,nx//2,:])
-        plotTime.append(time)
+        if velocityEvo:
+            velocityEvo.append(u[0,nx//2,:])
+            plotTime.append(time)
+        if saveVisual:
+            plt.clf()
+            plt.imshow(sqrt(u[0]**2+u[1]**2).transpose(), cmap=cm.Reds)
+            plt.savefig(new_dir_visual + "/fluid_{0:05d}.png".format(time//plots))
 
 
 #################### SYSTEM CHECKING ###################### 
@@ -184,7 +224,7 @@ if velocityEvolution:
         plt.title("Velocity profile Evolution at " + str(plots*(i+1)) + " it")
         plt.xlabel("Lattice width coordinates")
         plt.ylabel("Velocity")
-        plt.savefig("./" + new_dir + "/profile_" + str(i) + ".png")
+        plt.savefig(new_dir_velocity + "/profile_" + str(i) + ".png")
     
     print("Velocity graphs done.")
 
@@ -198,13 +238,13 @@ if systemCheck :
 
     # theorical variables lattice dependant
     deltaRho = abs(mean(rho[0,:]) - mean(rho[nx-1,:]))
-    deltaP = deltaRho*cs2
+    deltaP = deltaRho/cs2
     print("Rho left : ", mean(rho[0,:]))
     print("Rho right : ", mean(rho[nx-1,:]))
 
     R = ny//2
     umax = u[0,nx//2,R]
-    r = abs(arange((-ny//2)+1,(ny//2)+1,1))
+    r = abs(arange(-ny//2,ny//2,1))
 
     # expected and theorical velocities
     expectedU = [umax*(1-(i/R)**2) for i in r]
@@ -223,7 +263,7 @@ if systemCheck :
     plt.xlabel("Lattice width coordinates")
     plt.ylabel("Velocity")
     plt.legend()
-    name = "./Monitoring_Tube/" + "Velocity_Profiles_" + str(maxIter)
+    name = new_dir_monitoring + "/" + "Velocity_Profiles_" + str(maxIter)
     if StopInOut: name += "_stopInOutAtHalf"
     if savefiles: plt.savefig(name, bbox_inches='tight')
     plt.show()
@@ -236,7 +276,7 @@ if systemCheck :
     plt.title("Total population over the lattice")
     plt.xlabel("Iterations")
     plt.ylabel("Population")
-    name = "./Monitoring_Tube/" + "pop_sum_" + str(maxIter)
+    name = new_dir_monitoring + "/" + "pop_sum_" + str(maxIter)
     if StopInOut: 
         name += "_stopInOutAtHalf"
         plt.axvline(x=maxIter//2, color ="r", linestyle = 'dashed')
@@ -254,7 +294,7 @@ if systemCheck :
     plt.xlabel("Iterations")
     plt.ylabel("Momentum [kg*s/m^2]")
     plt.legend(title = "x coordinates")
-    name = "./Monitoring_Tube/" + "rho_u_" + str(maxIter)
+    name = new_dir_monitoring + "/" + "rho_u_" + str(maxIter)
     if StopInOut: 
         name += "_stopInOutAtHalf"
         plt.axvline(x=maxIter//2, color ="r", linestyle = 'dashed')
@@ -270,7 +310,7 @@ if systemCheck :
     plt.xlabel("Iterations")
     plt.ylabel("Population")
     plt.legend()
-    name = "./Monitoring_Tube/" + "in_out_" + str(maxIter)
+    name = new_dir_monitoring + "/" + "in_out_" + str(maxIter)
     if StopInOut: 
         name += "_stopInOutAtHalf"
         plt.axvline(x=maxIter//2, color ="r", linestyle = 'dashed')

@@ -78,9 +78,9 @@ fin = equilibrium(1, vel)
 ##################### DEFINING CONTROL VARIABLES #####################
 
 systemCheck = True
-savefiles = False
+savefiles = True
 velocityEvolution = False
-StopInOut = False
+StopInOut = True
 visualize = False
 saveVisual = True
 
@@ -113,6 +113,12 @@ if saveVisual :
         os.mkdir(new_dir_visual)
         print("Made new flow directory : " + new_dir_visual)
 
+if savefiles : 
+    new_dir_monitoring = "./Monitoring_tube_no_roll_flags_corrected_pop_" + str(maxIter) + "_it"
+    if not os.path.exists(new_dir_monitoring):
+        os.mkdir(new_dir_monitoring)
+        print("Made new monitoring directory : " + new_dir_monitoring)
+
 ###### Main time loop ##########################################################
 for time in range(maxIter):
 
@@ -139,7 +145,11 @@ for time in range(maxIter):
         
     # Compute equilibrium.
     feq = equilibrium(rho, u)
-    fin[[0,1,2],0,:] = feq[[0,1,2],0,:] + fin[[8,7,6],0,:] - feq[[8,7,6],0,:]
+    if StopInOut:
+        if time<=(maxIter//2):
+            fin[[0,1,2],1:50,:] = feq[[0,1,2],1:50,:] + fin[[8,7,6],1:50,:] - feq[[8,7,6],1:50,:]
+    else :
+        fin[[0,1,2],1:50,:] = feq[[0,1,2],1:50,:] + fin[[8,7,6],1:50,:] - feq[[8,7,6],1:50,:]
 
     # bilan entrée-sortie
     bilanIn.append(sum(fin[:,0,1:50]))

@@ -50,9 +50,20 @@ def obstacle_fun3(x, y):
     return (x1 & x2 & y1) | (x1 & x2 & y2 & y3)
 
 obstacle3 = fromfunction(obstacle_fun3, (ny,nx))
+
+flags = np.zeros((ny,nx))
+flags[obstacle3] = 1
+
+
 # figure(1)
 # plt.imshow(np.transpose(obstacle3), interpolation='nearest')
 plt.imshow(obstacle3)
 # plt.plot(obstacle2)
+plt.title("obstacle")
 plt.show()
-print(obstacle2)
+
+# print(obstacle2)
+
+plt.figure
+plt.imshow(flags)
+plt.show()
