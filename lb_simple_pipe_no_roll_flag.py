@@ -8,10 +8,10 @@ import os
 import time
 
 ###### Flow definition #########################################################
-maxIter = 6000  # Total number of time iterations.
+maxIter = 15000  # Total number of time iterations.
 Re = 10.0         # Reynolds number.
 nx, ny = 301, 201 # Number of lattice nodes.
-ly = ny-1         # Height of the domain in lattice units.
+# ly = ny-1         # Height of the domain in lattice units.
 # cx, cy, r = nx//4, ny//2, ny//2 # Coordinates of the cylinder.
 # rayon = ny//2           # rayon of tube section
 R = ny//2
@@ -88,7 +88,8 @@ savefiles = True
 velocityEvolution = False
 StopInOut = True
 visualize = False
-saveVisual = True
+saveVisual = False
+lookAtGraphs = False
 
 latticePopulation = []
 
@@ -252,7 +253,7 @@ if systemCheck :
     ux = u[0,nx//2,:]
 
     # theorical variables lattice dependant
-    deltaRho = abs(mean(rho[0,:]) - mean(rho[nx-1,:]))
+    deltaRho = abs(mean(rho[49,:]) - mean(rho[nx-50,:]))
     deltaP = deltaRho*cs2
     print("Rho left : ", mean(rho[0,:]))
     print("Rho right : ", mean(rho[nx-1,:]))
@@ -260,13 +261,31 @@ if systemCheck :
     # R = ny//2
     umax = u[0,nx//2,R]
     r = abs(arange((-ny//2)+1,(ny//2)+1,1))
+    rho_center = mean(rho[nx//2,:])
+    L = (nx-50)-50
 
     # expected and theorical velocities
     expectedU = [umax*(1-(i/R)**2) for i in r]
-    uformula = [deltaP*(R**2-i**2)/(4*nulb*nx) for i in r]
+    uformula = [deltaP*(R**2-i**2)/(4*nulb*rho_center*L) for i in r]
 
     mse_expectedU = mean(((ux - expectedU)**2))
     mse_physicU = mean((ux - uformula)**2)
+
+    valueFile = open(new_dir_monitoring + "/VeloctiyProfileValues.txt", 'w')
+
+    txt = "\nTheoretical values : \n"
+    txt +=  "deltaRho : " + str(deltaRho) + "\n"
+    txt += "deltaP : " + str(deltaP) + "\n"
+    txt += "R : " + str(R) + "\n"
+    txt += "viscosity(nulb) : " + str(nulb) + "\n"
+    txt += "Rho at the center : " + str(rho_center) + "\n"
+    txt += "L : " + str(L) + "\n"
+    txt += "Max theoretical velocity : " + str(deltaP*(R**2)/(4*nulb*rho_center*L)) + "\n"
+
+    valueFile.write(txt)
+    valueFile.close()
+
+    print(txt)
 
     # VELOCITY PROFILES
 
@@ -281,10 +300,27 @@ if systemCheck :
     name = new_dir_monitoring + "/" + "Velocity_Profiles_" + str(maxIter)
     if StopInOut: name += "_stopInOutAtHalf"
     if savefiles: plt.savefig(name, bbox_inches='tight')
-    plt.show()
+    if lookAtGraphs : plt.show()
+
+
+    # DENSITY PROFILE
+
+    rhoRange = arange(49,nx-50,1)
+    meanRho = [mean(rho[i,:]) for i in rhoRange]
+    plt.figure()
+    plt.plot(rhoRange,meanRho)
+    plt.title("Density profile accross lattice")
+    plt.xlabel("Coordinate")
+    plt.ylabel("Density")
+    name = new_dir_monitoring + "/" + "rho_profile_" + str(maxIter)
+    if StopInOut: name += "_stopInOutAtHalf"
+    if savefiles: plt.savefig(name, bbox_inches='tight')
+    if lookAtGraphs : plt.show()
+
 
     # POPULATION
 
+    '''
     # total population
     plt.figure()
     plt.plot(arange(0,len(latticePopulation),1),latticePopulation)
@@ -296,7 +332,7 @@ if systemCheck :
         name += "_stopInOutAtHalf"
         plt.axvline(x=maxIter//2, color ="r", linestyle = 'dashed')
     if savefiles: plt.savefig(name, bbox_inches='tight')
-    plt.show()
+    if lookAtGraphs : plt.show()
 
 
     # MOMENTUM
@@ -314,7 +350,7 @@ if systemCheck :
         name += "_stopInOutAtHalf"
         plt.axvline(x=maxIter//2, color ="r", linestyle = 'dashed')
     if savefiles: plt.savefig(name, bbox_inches='tight')
-    plt.show()
+    if lookAtGraphs : plt.show()
 
     # INPUT & OUTPUT
 
@@ -330,8 +366,9 @@ if systemCheck :
         name += "_stopInOutAtHalf"
         plt.axvline(x=maxIter//2, color ="r", linestyle = 'dashed')
     if savefiles: plt.savefig(name, bbox_inches='tight')
-    plt.show()
+    if lookAtGraphs : plt.show()
 
+    '''
 
 ####################### COMMENTS & QUESTIONS #################################
 

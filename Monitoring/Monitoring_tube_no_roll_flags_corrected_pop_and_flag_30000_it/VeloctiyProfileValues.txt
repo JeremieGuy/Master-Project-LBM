@@ -1,0 +1,9 @@
+
+Theoretical values : 
+deltaRho : 1.8526416047937033e-06
+deltaP : 6.175472015979011e-07
+R : 100
+viscosity(nulb) : 0.4
+Rho at the center : 1.125075450967681
+L : 201
+Max theoretical velocity : 1.7067600525482712e-05

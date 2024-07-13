@@ -8,7 +8,7 @@ import os
 import time
 
 ###### Flow definition #########################################################
-maxIter = 6000  # Total number of time iterations.
+maxIter = 100  # Total number of time iterations.
 Re = 10.0         # Reynolds number.
 nx, ny = 301, 201 # Number of lattice nodes.
 ly = ny-1         # Height of the domain in lattice units.
