@@ -97,7 +97,7 @@ fin = equilibrium(1, vel)
 ##################### DEFINING CONTROL VARIABLES #####################
 
 systemCheck = False
-savefiles = False
+savefiles = True
 velocityEvolution = False
 StopInOut = False
 visualize = False
@@ -133,6 +133,19 @@ if saveVisual :
     if not os.path.exists(new_dir_visual):
         os.mkdir(new_dir_visual)
         print("Made new flow directory : " + new_dir_visual)
+
+
+populationFile = open(new_dir_monitoring + "/population_bounceback.txt", 'w')
+populationFile.write("   | BEFORE PROPAGATION                                            " 
+                     + "| BEFORE COLLISION                   | AFTER COLLISION\n")
+populationFile.write("FL | " + str(flags[49,49]) + ", " + str(flags[50,49]) + ", " + str(flags[50,49]) 
+                     + "                                                 | " 
+                     + str(flags[50,50]) + "\n" )
+populationFile.write("it | FOUT[2,49,49] FOUT[5,50,49] FOUT [8,51,49]                    " 
+                     + "| FIN[[2,5,8],50,50]                 | FOUT[[2,5,8],50,50]\n")
+
+
+BeforeProp = str(fin[6,49,49]) + " " + str(fin[3,50,49]) + " " + str(fin[0,51,49])
 
 start_time = time.time()
 ###### Main time loop ##########################################################
@@ -172,6 +185,8 @@ for execTime in range(maxIter):
     bilanIn.append(sum(fin[:,1,1:50]))
     bilanOut.append(sum(fin[:,0,151:ny-2]))
 
+    beforeCol = str(fin[:,50,50]) + " | "
+
     # Collision step.
     fout = fin - omega * (fin - feq)
 
@@ -189,6 +204,13 @@ for execTime in range(maxIter):
                 for i in range(9):
                     fout[i,x,y] = fin[8-i,x,y]
 
+    afterCol = str(fout[:,50,50])
+
+    populationFile.write(str(execTime) + " | " + BeforeProp)
+    populationFile.write(beforeCol + afterCol + "\n")
+
+
+    BeforeProp = str([fout[:,49,49], fout[:,50,49], fout[:,51,49]]) + " | "
     # Streaming step.
     for x in range(nx):
         for y in range(ny):
@@ -210,7 +232,8 @@ for execTime in range(maxIter):
                     
                     fin[i,next_x,next_y] = fout[i,x,y]
   
- 
+    # print("fin : ", fin[:,50,50])
+    # print("fout : ", fout[:,50,50])
     # Visualization of the velocity.
     if (execTime%10==0) and visualize:
         plt.clf()
@@ -218,6 +241,7 @@ for execTime in range(maxIter):
         plt.title("iteration : %d/%d" % (execTime, maxIter))
         # plt.savefig("vel.{0:03d}.png".format(time//100))
         plt.pause(.01)
+        # plt.show()
         plt.cla()
     else : 
         print("iteration : " + str(execTime) + "/" + str(maxIter), end="\r")
@@ -240,6 +264,8 @@ for execTime in range(maxIter):
 
 end_time = time.time()
 print("Execution time : ", end_time-start_time)
+
+populationFile.close()
 #################### SYSTEM CHECKING ###################### 
 # VELOCITY
 if velocityEvolution:

@@ -1,6 +1,7 @@
 import numpy as np
 import sys
 import matplotlib.pyplot as plt
+import math
 
 nx = 301
 ny = 201
@@ -109,7 +110,7 @@ def testflagobstacle():
     flags[:,0] = 1 # top
     flags[:,ny-1] = 1 # bot
     flags[nx-1,:] = 1 # right
-
+    flags[0,0:51] = 1 # behind inlet
     # obstacle1 = (80:120, 210:250)
     # bounceback around obstalce
     flags[0:151,50] = 1
@@ -130,8 +131,7 @@ def testflagobstacle():
     # inside obstacle = 2 = no update
     flags[201:250,51:150] = 2
 
-
-    plt.imshow(flags)
+    plt.imshow(np.transpose(flags))
     plt.show()
 
 def test1():
@@ -139,6 +139,19 @@ def test1():
     x = np.arange(0,10,1)
     print(x)
     print(x[3:7])
+
+def testwrite():
+    f = np.zeros([4,3,4])
+    # print(f)
+    f[3,2,3] = 0.123456789
+    # a = f[3,2,3]
+    f = open("test.txt", 'w')
+    # x = {f[3,2,3]:4d}
+    # a = "{:.3f}".format(f[3,2,3]) + " " + "{:.3f}".format(f[3,2,3])
+    # print(a)
+    templ = '{0:.2f} {1:.2f}\n'
+    f.write(templ.format(f[3,2,3], f[3,2,3]))
+    f.close()
 
 # testMatrix()
 # testMeshGrid()
@@ -154,3 +167,4 @@ def test1():
 # testflag()
 testflagobstacle()
 # test1()
+# testwrite()

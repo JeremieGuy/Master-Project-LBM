@@ -71,6 +71,7 @@ flags[211:250,81:120] = 2
 # plt.imshow(flags)
 # plt.show()
 
+
 def iniVel():
     vel = zeros((2,nx,ny))
     vel[0,0,:] = velocity
