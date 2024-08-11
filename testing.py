@@ -153,6 +153,23 @@ def testwrite():
     f.write(templ.format(f[3,2,3], f[3,2,3]))
     f.close()
 
+def testinivel():
+    nx = 201
+    ny = 101
+    velocity = 0.04
+    R = ny//2
+    vel = np.zeros((2,nx,ny))
+    distance = abs(np.arange((-ny//2)+1,(ny//2)+1,1))
+    velocity_curve = [velocity*(1-(i/R)**2) for i in distance]
+    vel[0,0,:] = velocity_curve
+    plt.imshow(np.transpose(vel[0,:,:]))
+    plt.colorbar(location = "left", label = "horizontal velocity [m/s]")
+    plt.show()
+
+def testAffichage():
+    ny = 5
+    print(np.arange(ny-1,-1,-1))
+
 # testMatrix()
 # testMeshGrid()
 # testFull()
@@ -163,8 +180,10 @@ def testwrite():
 # testLinesapce()
 # testVel(30,10)
 # testUmax()
-# testcoord("20:30")
+# testcoord("20:30")s
 # testflag()
-testflagobstacle()
+# testflagobstacle()        
 # test1()
 # testwrite()
+# testinivel()
+testAffichage()

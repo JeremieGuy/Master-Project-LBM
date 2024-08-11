@@ -147,6 +147,7 @@ populationFile.write("it | FOUT[2,49,49] FOUT[5,50,49] FOUT [8,51,49]           
 
 BeforeProp = str(fin[6,49,49]) + " " + str(fin[3,50,49]) + " " + str(fin[0,51,49])
 
+
 start_time = time.time()
 ###### Main time loop ##########################################################
 for execTime in range(maxIter):
