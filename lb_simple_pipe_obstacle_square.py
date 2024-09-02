@@ -123,7 +123,7 @@ def monitorRho():
 def writeFileMonitoring(x,y):
     lineiter = "iteration : " + str(execTime) + "\n\n"
     line1 = str('%.5f'%(fin[2,x,y])) + " " + str('%.5f'%(fin[5,x,y])) + " " + str('%.5f'%(fin[8,x,y])) 
-    line2 = str('%.5f'%(fin[1,x,50])) + " " + str('%.5f'%(fin[4,x,y])) + " " + str('%.5f'%(fin[7,x,y])) 
+    line2 = str('%.5f'%(fin[1,x,y])) + " " + str('%.5f'%(fin[4,x,y])) + " " + str('%.5f'%(fin[7,x,y])) 
     line3 = str('%.5f'%(fin[0,x,y])) + " " + str('%.5f'%(fin[3,x,y])) + " " + str('%.5f'%(fin[6,x,y])) 
     line1_2 = " | " + str('%.5f'%(fout[6,x,y])) + " " + str('%.5f'%(fout[3,x,y])) + " " + str('%.5f'%(fout[0,x,y]))
     line2_2 = " | " + str('%.5f'%(fout[7,x,y])) + " " + str('%.5f'%(fout[4,x,y])) + " " + str('%.5f'%(fout[1,x,y])) + " \n"
@@ -280,9 +280,6 @@ for execTime in range(maxIter):
     feq = equilibrium(rho, u)
     fin[[0,1,2],0,:] = feq[[0,1,2],0,:] + fin[[8,7,6],0,:] - feq[[8,7,6],0,:]
 
-    # bilan entrée-sortie
-    # bilanIn.append(sum(fin[:,0,:]))
-    # bilanOut.append(sum(fin[:,nx-1,:]))
 
     # Collision step.
     fout = fin - omega * (fin - feq)
@@ -333,28 +330,15 @@ for execTime in range(maxIter):
     
     if (execTime%plots==0):
         # print("write")
-        saveNodeImage(130,50, execTime)
+        saveNodeImage(nodeX,nodeY, execTime)
     
-    writeFileMonitoring(130,50)
+    writeFileMonitoring(nodeX,nodeY)
 
-    # else : 
-    #     print("iteration : " + str(execTime) + "/" + str(maxIter), end="\r")
-    
-    # population control : 
-    # latticePopulation.append(sum(fin))
 
-    # rho_u_left.append(sum(fin[:,50,:]*u[0,50,:]))
-    # rho_u_center.append(sum(fin[:,150,:]*u[0,150,:]))
-    # rho_u_right.append(sum(fin[:,250,:]*u[0,250,:]))
-
-    # if(execTime%plots==0):
-    #     if velocityEvo:
-    #         velocityEvo.append(u[0,nx//2,:])
-    #         plotTime.append(execTime)
-    #     if saveVisual:
-    #         plt.clf()
-    #         plt.imshow(sqrt(u[0]**2+u[1]**2).transpose(), cmap=cm.Reds)
-    #         plt.savefig(new_dir_visual + "/fluid_{0:05d}.png".format(execTime//plots))
+    # if saveVisual and execTime%plots==0:
+    #     plt.clf()
+    #     plt.imshow(sqrt(u[0]**2+u[1]**2).transpose(), cmap=cm.Reds)
+    #     plt.savefig(new_dir_visual + "/fluid_{0:05d}.png".format(execTime//plots))
 
     print("iteration : " + str(execTime) + "/" + str(maxIter), end="\r")
     # if(execTime%500==0):
@@ -366,12 +350,4 @@ print("Execution time : " + str(end_time-start_time) + " [s]")
 
 #################### SYSTEM CHECKING ###################### 
 
-
-# monitorVelocity()
-# monitorRho()
-
-
-
 ####################### COMMENTS & QUESTIONS #################################
-
-# how to pass coordinates range as function parameters ? ex : f(x):print(array[x]) with x = 10:40 ?
