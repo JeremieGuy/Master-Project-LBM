@@ -2,6 +2,8 @@ import numpy as np
 import sys
 import matplotlib.pyplot as plt
 import math
+import cv2
+import matplotlib.patches as patches
 
 nx = 301
 ny = 201
@@ -170,6 +172,24 @@ def testAffichage():
     ny = 5
     print(np.arange(ny-1,-1,-1))
 
+def testflagsmallsystem():
+    # cv2.rectangle(img,(384,0),(510,128),(0,255,0),3)
+    flags = np.zeros((7,5))
+    flags[:,0] = 1
+    flags[:,4] = 1
+    flags[4,2] = 1
+    flags[0,1:4] = 2
+    flags[6,:] = 3
+    # flags[5,2] = 1
+    
+    fig, ax = plt.subplots()
+    ax.imshow(np.transpose(flags))
+    rect = patches.Rectangle((5.5, 1.5), 1, 1, linewidth=1, edgecolor='r', facecolor='none')
+    # ax.add_patch(rect)
+
+    # plt.imshow()
+    plt.show()
+
 # testMatrix()
 # testMeshGrid()
 # testFull()
@@ -186,4 +206,5 @@ def testAffichage():
 # test1()
 # testwrite()
 # testinivel()
-testAffichage()
+# testAffichage()
+testflagsmallsystem()

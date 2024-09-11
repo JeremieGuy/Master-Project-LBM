@@ -1,0 +1,7 @@
+LB questions : 
+
+1. Quelle zone de noeuds considérer quand on regarde le rho du BB ? tous ? ceux dans un périmètre ? et on prend en compte uniquement les directions qui font face à la zone ouverte du système ?
+
+2. Quels tests additionnel (a part vélocité et population) effectuer quand on test architectures de l'inlet ?
+
+3. Est-ce qu'on prend en compte les coins pour calculer les inputs de zu-he dans l'équation ? 
