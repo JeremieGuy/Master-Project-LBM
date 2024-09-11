@@ -5,3 +5,5 @@ LB questions :
 2. Quels tests additionnel (a part vélocité et population) effectuer quand on test architectures de l'inlet ?
 
 3. Est-ce qu'on prend en compte les coins pour calculer les inputs de zu-he dans l'équation ? 
+
+test hello
