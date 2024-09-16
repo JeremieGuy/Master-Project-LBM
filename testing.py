@@ -190,6 +190,15 @@ def testflagsmallsystem():
     # plt.imshow()
     plt.show()
 
+def rangetest():
+    
+    ny = 20
+    test = np.arange(0,ny,1)
+    
+
+    print(test)
+    print(test[1:ny-1])
+
 # testMatrix()
 # testMeshGrid()
 # testFull()
@@ -207,4 +216,5 @@ def testflagsmallsystem():
 # testwrite()
 # testinivel()
 # testAffichage()
-testflagsmallsystem()
+# testflagsmallsystem()
+rangetest()

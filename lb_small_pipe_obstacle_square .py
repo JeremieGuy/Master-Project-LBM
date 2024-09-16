@@ -9,7 +9,7 @@ import os
 import time
 
 ###### Flow definition #########################################################
-maxIter = 100  # Total number of time iterations.
+maxIter = 500  # Total number of time iterations.
 Re = 10.0         # Reynolds number.
 nx, ny = 7, 5 # Number of lattice nodes.
 # ly = ny-1         # Height of the domain in lattice units.
@@ -49,6 +49,33 @@ def macroscopic(fin):
         u[1,:,:] += v[i,1] * fin[i,:,:]
     u /= rho
     return rho, u
+
+u_bot_h = []
+u_bot_v = []
+u_top_h = []
+u_top_v = []
+
+def isolatedMacroscopicBottom(fin,x,y):
+    bot = [2,5,8]
+    rho_bot = sum(fin[bot,x,y])
+    uh = 0
+    uv = 0
+    for i in bot:
+        uh += v[i,0] * fin[i,x,y]
+        uv += v[i,1] * fin[i,x,y] 
+    u_bot_h.append(uh / rho_bot)
+    u_bot_v.append(uv / rho_bot)
+    
+def isolatedMacroscopicTop(fin,x,y):
+    top = [0,3,6]
+    rho_top = sum(fin[top,x,y])
+    uh = 0
+    uv = 0
+    for i in top:
+        uh += v[i,0] * fin[i,x,y]
+        uv += v[i,1] * fin[i,x,y] 
+    u_top_h.append(uh / rho_top)
+    u_top_v.append(uv / rho_top)
 
 def equilibrium(rho, u):              # Equilibrium distribution function.
     usqr = 3/2 * (u[0]**2 + u[1]**2)
@@ -213,6 +240,46 @@ def drawoutput():
 
     populationFile.write(dotline + "\n")
 
+def plotVelocities():
+    
+    x_axis = arange(0,len(u_bot_h),1)
+    # print(len(x_axis), x_axis)
+    # print(len(u_bot_h), u_bot_h)
+    # print(len(u_top_h), u_top_h)
+    plt.clf()
+    plt.plot(x_axis,u_bot_h, label="[2,4]")
+    plt.plot(x_axis,u_top_h, label = "[1,0]")
+    plt.legend(title = "Coordinates")
+    title = "Horizontal velocities of BB points"
+    if inletCorner : title += " with inlet corner"
+    else : title += " no inlet corner"
+    plt.title(title)
+    plt.xlabel("Iterations")
+    plt.ylabel("Velocity [m/s]")
+    name = new_dir_monitoring + "/" + "Horizontal_Velocities_" + str(maxIter)
+    if inletCorner : name += "_corner=true"
+    else : name += "_corner=false"
+    plt.savefig(name, bbox_inches='tight')
+
+    x_axis = arange(0,len(u_bot_v),1)
+    # print(len(x_axis), x_axis)
+    # print(len(u_bot_v), u_bot_v)
+    # print(len(u_top_v), u_top_v)
+    plt.clf()
+    plt.plot(x_axis,u_bot_v, label="[2,4]")
+    plt.plot(x_axis,u_top_v, label = "[1,0]")
+    plt.legend(title = "Coordinates")
+    title = "Vertical velocities of BB points"
+    if inletCorner : title += " with inlet corner"
+    else : title += " no inlet corner"
+    plt.title(title)
+    plt.xlabel("Iterations")
+    plt.ylabel("Velocity [m/s]")
+    name = new_dir_monitoring + "/" + "Vertical_Velocities_" + str(maxIter)
+    if inletCorner : name += "_corner=true"
+    else : name += "_corner=false"
+    plt.savefig(name, bbox_inches='tight')
+
 ###### Setup: square obstacle and velocity inlet with perturbation ########
 # 0 = open, 1 = bounceback, 2 = obstacle
 
@@ -262,7 +329,7 @@ vel = iniVel()
 
 # Initialization of the populations at equilibrium with the given velocity.
 fin = equilibrium(1, vel)
-
+fout = equilibrium(1, vel)
 ##################### DEFINING CONTROL VARIABLES #####################
 
 
@@ -368,32 +435,38 @@ plt.legend(handles=patches, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0. )
 plt.savefig(new_dir_monitoring + "/system.png")
 plt.close()
 
+outputlog = open(new_dir_monitoring + "/monitor_fin&fout[2,2,2]=" + str(maxIter) + "_corner=" + str(inletCorner) + ".txt", 'w')
 ###### Main time loop ##########################################################
 start_time = time.time()
 
 for execTime in range(maxIter):
 
+    outputlog.write("1) Iteration = " +  str(execTime) + ", fin[1,2,2] = " + str(fin[1,2,2]) + ", fout[1,2,2] = " + str(fout[1,2,2]) + "\n")
     # Right wall: outflow condition.
     # fin[col3,-1,:] = fin[col3,-2,:]
     fin[col3,-1,outletY[0]:outletY[1]] = fin[col3,-2,outletY[0]:outletY[1]]
 
+    outputlog.write("2) Iteration = " +  str(execTime) + ", fin[1,2,2] = " + str(fin[1,2,2]) + ", fout[1,2,2] = " + str(fout[1,2,2])+ "\n")
     # Compute macroscopic variables, density and velocity.
     rho, u = macroscopic(fin)
 
+    isolatedMacroscopicBottom(fin,1,0)
+    isolatedMacroscopicTop(fin,2,4)
+
     # Left wall: inflow condition.
     u[:,0,1:ny-1] = vel[:,0,1:ny-1]
-    rho[0,1:ny-1] = 1/(1-u[0,0,1:ny-1]) * ( sum(fin[col2,0,1:ny-1], axis=0) +
-                                2*sum(fin[col3,0,1:ny-1], axis=0) )
+    rho[0,1:ny-1] = 1/(1-u[0,0,1:ny-1]) * ( sum(fin[col2,0,1:ny-1], axis=0) + 2*sum(fin[col3,0,1:ny-1], axis=0) )
     # u[:,0,inletY[0]:outletY[1]] = vel[:,0,inletY[0]:outletY[1]]
     # rho[0,inletY[0]:outletY[1]] = 1/(1-u[0,0,inletY[0]:outletY[1]]) * ( sum(fin[col2,0,inletY[0]:outletY[1]], axis=0) +
     #                             2*sum(fin[col3,0,inletY[0]:outletY[1]], axis=0) )
-        
+    
+    outputlog.write("3) Iteration = " +  str(execTime) + ", fin[1,2,2] = " + str(fin[1,2,2]) + ", fout[1,2,2] = " + str(fout[1,2,2])+ "\n")
     # Compute equilibrium.
     feq = equilibrium(rho, u)
-    # fin[[0,1,2],0,:] = feq[[0,1,2],0,:] + fin[[8,7,6],0,:] - feq[[8,7,6],0,:]
-    fin[[0,1,2],0,1:ny-1] = feq[[0,1,2],0,1:ny-1] + fin[[8,7,6],0,1:ny-1] - feq[[8,7,6],0,1:ny-1]
+    fin[[0,1,2],0,:] = feq[[0,1,2],0,:] + fin[[8,7,6],0,:] - feq[[8,7,6],0,:]
+    # fin[[0,1,2],0,1:ny-1] = feq[[0,1,2],0,1:ny-1] + fin[[8,7,6],0,1:ny-1] - feq[[8,7,6],0,1:ny-1]
     # fin[[0,1,2],0,inletY[0]:inletY[1]] = feq[[0,1,2],0,inletY[0]:inletY[1]] + fin[[8,7,6],0,inletY[0]:inletY[1]] - feq[[8,7,6],0,inletY[0]:inletY[1]]
-
+    outputlog.write("4) Iteration = " +  str(execTime) + ", fin[1,2,2] = " + str(fin[1,2,2]) + ", fout[1,2,2] = " + str(fout[1,2,2])+ "\n")
     if inletCorner:
         # top corner
         fin[col1,0,0] = fin[col1,0,1]
@@ -405,23 +478,30 @@ for execTime in range(maxIter):
         fin[3,0,-1] = fin[1,0,-2]
         fin[6,0,-1] = fin[0,0,-2]
 
+
+        # fin[col3,0,0] = fin[col3,0,1]
+        # fin[3,0,0] = fin[7,0,1]
+        # fin[0,0,0] = fin[6,0,1]
+
+        # # bottom corner
+        # fin[col3,0,-1] = fin[col3,0,-2]
+        # fin[5,0,-1] = fin[7,0,-2]
+        # fin[2,0,-1] = fin[8,0,-2]
+
+    outputlog.write("5) Iteration = " +  str(execTime) + ", fin[1,2,2] = " + str(fin[1,2,2]) + ", fout[1,2,2] = " + str(fout[1,2,2])+ "\n")
     # Collision step.
     fout = fin - omega * (fin - feq)
 
+    outputlog.write("6) Iteration = " +  str(execTime) + ", fin[1,2,2] = " + str(fin[1,2,2]) + ", fout[1,2,2] = " + str(fout[1,2,2])+ "\n")
     # Bounce-back condition
-
-    # for i in range(9):
-    #     # top
-    #     fout[i,:,0] = fin[8-i,:,0]
-    #     # bottom
-    #     fout[i,:,ny-1] = fin[8-i,:,ny-1]
 
     for x in range(nx):
         for y in range(ny):
             if flags[x,y] == 1:
                 for i in range(9):
                     fout[i,x,y] = fin[8-i,x,y]
-
+    
+    outputlog.write("7) Iteration = " +  str(execTime) + ", fin[1,2,2] = " + str(fin[1,2,2]) + ", fout[1,2,2] = " + str(fout[1,2,2])+ "\n")
     # Streaming step.
     for x in range(nx):
         for y in range(ny):
@@ -442,16 +522,7 @@ for execTime in range(maxIter):
                     
                     fin[i,next_x,next_y] = fout[i,x,y]
   
- 
-    # Visualization of the velocity.
-    # if (execTime%10==0) and visualize:
-    #     plt.clf()
-    #     plt.imshow(sqrt(u[0]**2+u[1]**2).transpose(), cmap=cm.Reds)
-    #     plt.title("iteration : %d/%d" % (execTime, maxIter))
-    #     # plt.savefig("vel.{0:03d}.png".format(time//100))
-    #     plt.pause(.01)
-    #     plt.cla()
-    
+    outputlog.write("8) Iteration = " +  str(execTime) + ", fin[1,2,2] = " + str(fin[1,2,2]) + ", fout[1,2,2] = " + str(fout[1,2,2])+ "\n")
     if (execTime%plots==0):
         # print("write")
         saveNodeImage(nodeX,nodeY, execTime)
@@ -459,20 +530,18 @@ for execTime in range(maxIter):
     writeFileMonitoring(nodeX,nodeY)
     drawoutput()
 
-
-    # if saveVisual and execTime%plots==0:
-    #     plt.clf()
-    #     plt.imshow(sqrt(u[0]**2+u[1]**2).transpose(), cmap=cm.Reds)
-    #     plt.savefig(new_dir_visual + "/fluid_{0:05d}.png".format(execTime//plots))
+    
 
     print("iteration : " + str(execTime) + "/" + str(maxIter), end="\r")
-    # if(execTime%500==0):
-    #     monitorVelocity()
-    #     monitorRho()
+
 
 end_time = time.time()
 print("Execution time : " + str(end_time-start_time) + " [s]")
 
 #################### SYSTEM CHECKING ###################### 
+
+
+plotVelocities()
+
 
 ####################### COMMENTS & QUESTIONS #################################
