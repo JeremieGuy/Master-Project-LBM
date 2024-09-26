@@ -31,7 +31,7 @@ col1 = array([0, 1, 2])
 col2 = array([3, 4, 5])
 col3 = array([6, 7, 8])
 
-inletCorner = True
+inletCorner = False
 outletCorner = False
 
 if inletCorner: inletY = [0,ny]
@@ -463,8 +463,8 @@ for execTime in range(maxIter):
     outputlog.write("3) Iteration = " +  str(execTime) + ", fin[1,2,2] = " + str(fin[1,2,2]) + ", fout[1,2,2] = " + str(fout[1,2,2])+ "\n")
     # Compute equilibrium.
     feq = equilibrium(rho, u)
-    fin[[0,1,2],0,:] = feq[[0,1,2],0,:] + fin[[8,7,6],0,:] - feq[[8,7,6],0,:]
-    # fin[[0,1,2],0,1:ny-1] = feq[[0,1,2],0,1:ny-1] + fin[[8,7,6],0,1:ny-1] - feq[[8,7,6],0,1:ny-1]
+    # fin[[0,1,2],0,:] = feq[[0,1,2],0,:] + fin[[8,7,6],0,:] - feq[[8,7,6],0,:]
+    fin[[0,1,2],0,1:ny-1] = feq[[0,1,2],0,1:ny-1] + fin[[8,7,6],0,1:ny-1] - feq[[8,7,6],0,1:ny-1]
     # fin[[0,1,2],0,inletY[0]:inletY[1]] = feq[[0,1,2],0,inletY[0]:inletY[1]] + fin[[8,7,6],0,inletY[0]:inletY[1]] - feq[[8,7,6],0,inletY[0]:inletY[1]]
     outputlog.write("4) Iteration = " +  str(execTime) + ", fin[1,2,2] = " + str(fin[1,2,2]) + ", fout[1,2,2] = " + str(fout[1,2,2])+ "\n")
     if inletCorner:
