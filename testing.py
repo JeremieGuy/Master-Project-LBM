@@ -215,6 +215,16 @@ def notMatTest():
     ])
 
     print(np.invert(mat))
+
+def testexepctedprofile():
+    tubesSize = 51
+    r = abs(np.arange((-tubesSize//2)+1,(tubesSize//2)+1,1))
+    R = tubesSize//2
+    print("r = ",r)
+    print("R = ", R)
+    test = 4
+    test2 = [test*(1-(i/R)**2) for i in r]
+    print(test2)
 # testMatrix()
 # testMeshGrid()
 # testFull()
@@ -233,7 +243,8 @@ def notMatTest():
 # testinivel()
 # testAffichage()
 # testflagsmallsystem()
-rangetest()
+# rangetest()
 # rolltest()
 # notMatTest()
+testexepctedprofile()
 

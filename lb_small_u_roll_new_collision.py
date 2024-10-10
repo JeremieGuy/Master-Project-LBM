@@ -480,7 +480,7 @@ fin = equilibrium(1, vel)
 fout = equilibrium(1, vel)
 # feq = zeros((9,nx,ny))
 rho, u = macroscopic(fin)
-
+# feq = equilibrium(rho, u)
 #### set relevant BB directions to 0 (= not facing the system)
 # setBBNodeToZero()
 
@@ -499,27 +499,20 @@ for execTime in range(maxIter):
     # Compute macroscopic variables, density and velocity.
     rho, u = macroscopic(fin)
 
-
     # Left wall: inflow condition.
-    # u[:,0,1:4] = vel[:,0,1:4]
-    # rho[0,1:4] = 1/(1-u[0,0,1:4]) * ( sum(fin[col2,0,1:4], axis=0) + 2*sum(fin[col3,0,1:4], axis=0) )
+    u[:,0,1:4] = vel[:,0,1:4]
+    rho[0,1:4] = 1/(1-u[0,0,1:4]) * ( sum(fin[col2,0,1:4], axis=0) + 2*sum(fin[col3,0,1:4], axis=0) )
 
     # Compute equilibrium.
-    # feq[:,invFlags2] = equilibrium(rho, u)[:,invFlags2]
+    # feq = equilibrium(rho, u)[:,invFlags2]
     feq = equilibrium(rho, u)
-    # fin[[0,1,2],0,1:4] = feq[[0,1,2],0,1:4] + fin[[8,7,6],0,1:4] - feq[[8,7,6],0,1:4]
+    fin[[0,1,2],0,1:4] = feq[[0,1,2],0,1:4] + fin[[8,7,6],0,1:4] - feq[[8,7,6],0,1:4]
 
     # Collision step for open path
-    fout = fin - omega * (fin - feq)
-    # fout[:,invFlags2] = fin[:,invFlags2] - omega * (fin[:,invFlags2] - feq[:,invFlags2])
+    # fout = fin - omega * (fin - feq)
+    fout[:,invFlags2] = fin[:,invFlags2] - omega * (fin[:,invFlags2] - feq[:,invFlags2])
 
     # Bounce-back condition
-    # for x in range(nx):
-    #     for y in range(ny):
-    #         if flags[x,y] == 1:
-    #             for i in range(9):
-    #                 fout[i,x,y] = fin[8-i,x,y]
-    
     for i in range(9):
         fout[i, flags2] = fin[8-i, flags2]
     
