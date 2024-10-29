@@ -17,14 +17,15 @@ nx, ny = 301, 151 # Number of lattice nodes.
 # ly = ny-1         # Height of the domain in lattice units.
 # cx, cy, r = nx//4, ny//2, ny//2 # Coordinates of the cylinder.
 # rayon = ny//2           # rayon of tube section
-R = ny//2
+# R = ny//2
+R = 25
 uLB     = 0.04                 # Velocity in lattice units.
-nulb    = uLB*ny/Re;             # Viscoscity in lattice units. velocity*characteristic length (= H)/Raynolds
+# nulb    = uLB*ny/Re             # Viscoscity in lattice units. velocity*characteristic length (= H)/Raynolds
+nulb    = uLB*R*2/Re
 omega = 1 / (3*nulb+0.5);    # Relaxation parameter.
 velocity = 0.04             #inital velocity
 cs2 = 1/3                # sound veocity adapted to lattice units     
-gamma = 1 # solid fraction
-
+gamma = 0 # solid fraction
 
 ########################## Lattice Constants ###########################################
 
@@ -215,7 +216,7 @@ plotTime = []
 latticePopulation = []
 
 if savefiles : 
-    new_dir_monitoring = "./Monitoring/u_clot_v1_gamma=" +str(gamma) + "_it=" + str(maxIter)
+    new_dir_monitoring = "./Monitoring/test_viscosity_u_clot_v1_gamma=" +str(gamma) + "_it=" + str(maxIter)
     if not os.path.exists(new_dir_monitoring):
         os.mkdir(new_dir_monitoring)
         print("Made new monitoring directory : " + new_dir_monitoring)
