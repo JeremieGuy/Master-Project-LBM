@@ -186,7 +186,7 @@ def testflagsmallsystem():
     fig, ax = plt.subplots()
     ax.imshow(np.transpose(flags))
     rect = patches.Rectangle((5.5, 1.5), 1, 1, linewidth=1, edgecolor='r', facecolor='none')
-    # ax.add_patch(rect)
+    ax.add_patch(rect)
 
     # plt.imshow()
     plt.show()
@@ -225,6 +225,28 @@ def testexepctedprofile():
     test = 4
     test2 = [test*(1-(i/R)**2) for i in r]
     print(test2)
+
+def testClotVelocities():
+
+    u = np.random.randint(0, 100, size=(2, 20, 10))
+    print(u)
+
+    fig, ( ax2, ax3) = plt.subplots(2, 1)
+    fig.suptitle('Velocity Profiles test')
+
+    # ax1.imshow(np.sqrt(u[0]**2+u[1]**2).transpose())
+    # plt.show()
+
+    # plt.clf()
+    clotVel = np.sqrt(u[0,5:15,1:9]**2+u[1,5:15,1:9]**2)
+    ax2.imshow(clotVel.transpose())
+    
+
+    vel = np.sum(clotVel,axis=0)
+    x = np.arange(0,len(vel),1)
+    ax3.plot(x,vel)
+    plt.show()
+
 # testMatrix()
 # testMeshGrid()
 # testFull()
@@ -242,9 +264,10 @@ def testexepctedprofile():
 # testwrite()
 # testinivel()
 # testAffichage()
-# testflagsmallsystem()
+testflagsmallsystem()
 # rangetest()
 # rolltest()
 # notMatTest()
-testexepctedprofile()
+# testexepctedprofile()
 
+# testClotVelocities()
